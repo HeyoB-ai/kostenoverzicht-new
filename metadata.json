@@ -1,0 +1,7 @@
+{
+  "name": "Receipt Analyzer for Car Maintenance",
+  "description": "A web application to photograph car maintenance receipts, analyze them using AI to extract key information, and log the expenses for each vehicle.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
