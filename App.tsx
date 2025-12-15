@@ -38,11 +38,6 @@ const App: React.FC = () => {
     return localStorage.getItem('googleScriptUrl') || '';
   });
 
-  // Load Gemini API Key from local storage
-  const [geminiApiKey, setGeminiApiKey] = useState<string>(() => {
-    return localStorage.getItem('geminiApiKey') || '';
-  });
-
   // Persist cars
   useEffect(() => {
     try {
@@ -56,11 +51,6 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('googleScriptUrl', googleScriptUrl);
   }, [googleScriptUrl]);
-
-  // Persist API Key
-  useEffect(() => {
-    localStorage.setItem('geminiApiKey', geminiApiKey);
-  }, [geminiApiKey]);
 
 
   const handleAddCar = (newCarData: Omit<Car, 'id'>) => {
@@ -89,9 +79,8 @@ const App: React.FC = () => {
     }
   };
 
-  const handleSaveSettings = (url: string, key: string) => {
+  const handleSaveSettings = (url: string) => {
     setGoogleScriptUrl(url);
-    setGeminiApiKey(key);
     setIsSettingsOpen(false); // Close settings after saving
   };
 
@@ -119,17 +108,6 @@ const App: React.FC = () => {
   }, []);
 
   const handleAnalyze = async () => {
-    if (!geminiApiKey) {
-        setError("U heeft nog geen API Key ingesteld.");
-        setIsSettingsOpen(true);
-        // Scroll to settings
-        setTimeout(() => {
-            const settingsEl = document.getElementById('settings');
-            if (settingsEl) settingsEl.scrollIntoView({ behavior: 'smooth' });
-        }, 100);
-        return;
-    }
-
     if (!imageFile || !selectedCarId) {
       setError('Selecteer een afbeelding en een auto.');
       return;
@@ -140,11 +118,11 @@ const App: React.FC = () => {
     setAnalyzedData(null);
 
     try {
-      const data = await analyzeReceipt(imageFile, geminiApiKey);
+      const data = await analyzeReceipt(imageFile);
       setAnalyzedData(data);
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'Analyse van het bonnetje is mislukt. Controleer uw API Key en probeer het opnieuw.');
+      setError(err.message || 'Analyse van het bonnetje is mislukt. Probeer het opnieuw.');
     } finally {
       setIsLoading(false);
     }
@@ -240,8 +218,8 @@ const App: React.FC = () => {
               aria-controls="settings"
             >
               <div className="flex items-center space-x-3">
-                <Cog6ToothIcon className={`h-6 w-6 ${!geminiApiKey ? 'text-red-500 animate-pulse' : 'text-blue-600'}`} />
-                <span>Instellingen {!geminiApiKey && '(Vereist: API Key)'}</span>
+                <Cog6ToothIcon className="h-6 w-6 text-blue-600" />
+                <span>Instellingen</span>
               </div>
               {isSettingsOpen ? <ChevronUpIcon className="h-5 w-5 text-slate-500" /> : <ChevronDownIcon className="h-5 w-5 text-slate-500" />}
             </button>
@@ -249,7 +227,6 @@ const App: React.FC = () => {
               <div id="settings" className="p-4 md:p-6 border-t border-slate-200 animate-fade-in">
                 <Settings
                   scriptUrl={googleScriptUrl}
-                  apiKey={geminiApiKey}
                   onSave={handleSaveSettings}
                 />
               </div>

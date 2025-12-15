@@ -3,24 +3,21 @@ import { ChevronDownIcon, ChevronUpIcon } from './IconComponents';
 
 interface SettingsProps {
   scriptUrl: string;
-  apiKey: string;
-  onSave: (url: string, key: string) => void;
+  onSave: (url: string) => void;
 }
 
-export const Settings: React.FC<SettingsProps> = ({ scriptUrl, apiKey, onSave }) => {
+export const Settings: React.FC<SettingsProps> = ({ scriptUrl, onSave }) => {
   const [currentUrl, setCurrentUrl] = useState(scriptUrl);
-  const [currentKey, setCurrentKey] = useState(apiKey);
   const [showInstructions, setShowInstructions] = useState(false);
   const [copyButtonText, setCopyButtonText] = useState('Kopieer Code');
 
 
   useEffect(() => {
     setCurrentUrl(scriptUrl);
-    setCurrentKey(apiKey);
-  }, [scriptUrl, apiKey]);
+  }, [scriptUrl]);
 
   const handleSave = () => {
-    onSave(currentUrl, currentKey);
+    onSave(currentUrl);
     alert('Instellingen opgeslagen!');
   };
   
@@ -67,29 +64,9 @@ function doPost(e) {
 
   return (
     <div className="space-y-8">
-      {/* API Key Section */}
-      <div>
-        <h3 className="text-lg font-medium text-slate-800">1. Google Gemini API Key (Verplicht)</h3>
-        <p className="text-sm text-slate-500 mb-2">Deze sleutel is nodig om de bonnetjes te analyseren.</p>
-        <div className="space-y-2">
-           <input
-            type="password"
-            value={currentKey}
-            onChange={(e) => setCurrentKey(e.target.value)}
-            placeholder="Plak uw Gemini API Key hier (begint met Alza...)"
-            className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-          />
-          <p className="text-xs text-slate-400">
-            Heeft u geen sleutel? <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Maak er hier gratis een aan</a>.
-          </p>
-        </div>
-      </div>
-
-      <hr className="border-slate-200" />
-
       {/* Google Sheets Section */}
       <div>
-        <h3 className="text-lg font-medium text-slate-800">2. Google Apps Script URL (Optioneel)</h3>
+        <h3 className="text-lg font-medium text-slate-800">Google Apps Script URL (Optioneel)</h3>
         <p className="text-sm text-slate-500 mb-2">Plak hier de URL van uw Web App-script om bonnetjes automatisch op te slaan in uw Google Sheet.</p>
         <input
             type="url"
@@ -106,7 +83,7 @@ function doPost(e) {
             aria-expanded={showInstructions}
             >
             <span>Hoe stel ik Google Sheets in? (Klik voor instructies)</span>
-            {showInstructions ? <ChevronUpIcon className="h-5 w-5" /> : <ChevronDownIcon className="h-5 w-5" />}
+            {showInstructions ? <ChevronUpIcon className="h-5 w-5" /> : <ChevronDownIcon className="h-5 w-5 text-slate-500" />}
             </button>
 
             {showInstructions && (

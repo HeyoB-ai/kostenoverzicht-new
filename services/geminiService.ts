@@ -12,12 +12,8 @@ const fileToGenerativePart = async (file: File) => {
   };
 };
 
-export const analyzeReceipt = async (imageFile: File, apiKey: string): Promise<AnalyzedReceiptData> => {
-  if (!apiKey) {
-    throw new Error("API Key ontbreekt. Vul uw Google Gemini API Key in bij de Instellingen.");
-  }
-
-  const ai = new GoogleGenAI({ apiKey: apiKey });
+export const analyzeReceipt = async (imageFile: File): Promise<AnalyzedReceiptData> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
   const imagePart = await fileToGenerativePart(imageFile);
 
