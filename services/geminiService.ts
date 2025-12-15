@@ -15,11 +15,12 @@ const fileToBase64 = async (file: File): Promise<string> => {
   });
 };
 
-export const analyzeReceipt = async (imageFile: File): Promise<AnalyzedReceiptData> => {
+export const analyzeReceipt = async (imageFile: File, apiKey?: string): Promise<AnalyzedReceiptData> => {
   // Converteer de afbeelding naar base64 voor verzending
   const base64Data = await fileToBase64(imageFile);
 
   // Roep de veilige Netlify backend functie aan
+  // We sturen de optionele apiKey mee in de body
   const response = await fetch('/.netlify/functions/analyze', {
     method: 'POST',
     headers: {
@@ -28,6 +29,7 @@ export const analyzeReceipt = async (imageFile: File): Promise<AnalyzedReceiptDa
     body: JSON.stringify({
       image: base64Data,
       mimeType: imageFile.type,
+      apiKey: apiKey, // Optionele handmatige override
     }),
   });
 

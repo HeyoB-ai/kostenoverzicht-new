@@ -7,26 +7,6 @@ export default async (req, context) => {
   }
 
   try {
-    // 1. Probeer beide mogelijke namen voor de API key
-    let rawApiKey = process.env.VITE_API_KEY || process.env.API_KEY;
-
-    if (!rawApiKey) {
-      console.error("CRITISCH: Geen API Key gevonden in environment variables (VITE_API_KEY of API_KEY).");
-      return new Response(JSON.stringify({ error: "Server configuratie fout: API Key ontbreekt in Netlify instellingen." }), {
-        status: 500,
-        headers: { "Content-Type": "application/json" }
-      });
-    }
-
-    // 2. AGRESSIEVE SCHOONMAAK
-    // Verwijder alles wat geen letter, cijfer of symbool is die in keys voorkomt.
-    // Specifiek: verwijder quotes (" of '), spaties, tabs, newlines.
-    const apiKey = rawApiKey.replace(/["'\s\n\r]/g, '');
-
-    // Debug log (veilig: laat alleen lengte en laatste 4 tekens zien)
-    console.log(`API Key geladen. Lengte: ${apiKey.length}. Eindigt op: ...${apiKey.slice(-4)}`);
-
-    // Lees de data van de frontend
     let body;
     try {
       body = await req.json();
@@ -34,7 +14,25 @@ export default async (req, context) => {
       return new Response(JSON.stringify({ error: "Ongeldige JSON body." }), { status: 400 });
     }
 
-    const { image, mimeType } = body;
+    const { image, mimeType, apiKey: customApiKey } = body;
+
+    // 1. Bepaal welke API Key we gebruiken.
+    // PRIORITEIT: 1. Key uit Instellingen (body), 2. Key uit Environment (Netlify)
+    let rawApiKey = customApiKey || process.env.VITE_API_KEY || process.env.API_KEY;
+
+    if (!rawApiKey) {
+      console.error("CRITISCH: Geen API Key gevonden in request of environment.");
+      return new Response(JSON.stringify({ error: "Server configuratie fout: Geen API Key gevonden. Voer uw sleutel in via Instellingen of configureer Netlify." }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
+    // 2. AGRESSIEVE SCHOONMAAK
+    const apiKey = rawApiKey.replace(/["'\s\n\r]/g, '');
+
+    // Debug log (veilig)
+    console.log(`API Key wordt gebruikt. Lengte: ${apiKey.length}. Bron: ${customApiKey ? 'App Instellingen' : 'Netlify Env'}`);
 
     if (!image) {
       return new Response(JSON.stringify({ error: "Geen afbeelding ontvangen." }), {
@@ -85,12 +83,11 @@ export default async (req, context) => {
   } catch (error) {
     console.error("Gemini API Error Full:", error);
     
-    // Probeer een duidelijke foutmelding terug te geven
     let errorMessage = "Fout bij verwerken bonnetje.";
     
     if (error.message) {
         if (error.message.includes("401")) {
-            errorMessage = "Authenticatie fout bij Google (401). De API Key is waarschijnlijk onjuist of niet geactiveerd voor Gemini API. Check Netlify logs voor details.";
+            errorMessage = "Authenticatie fout bij Google (401). Als u dit ziet, probeer dan uw API Key handmatig in te voeren bij Instellingen. Mogelijk blokkeert Google de server-toegang (IP/Referrer restricties).";
         } else if (error.message.includes("403")) {
              errorMessage = "Toegang geweigerd (403). Mogelijke oorzaken: API niet ingeschakeld in Google Cloud Console, of billing limiet bereikt.";
         } else {

@@ -1,23 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronDownIcon, ChevronUpIcon } from './IconComponents';
+import { ChevronDownIcon, ChevronUpIcon, WrenchScrewdriverIcon } from './IconComponents';
 
 interface SettingsProps {
   scriptUrl: string;
-  onSave: (url: string) => void;
+  apiKey: string;
+  onSave: (url: string, key: string) => void;
 }
 
-export const Settings: React.FC<SettingsProps> = ({ scriptUrl, onSave }) => {
+export const Settings: React.FC<SettingsProps> = ({ scriptUrl, apiKey, onSave }) => {
   const [currentUrl, setCurrentUrl] = useState(scriptUrl);
+  const [currentKey, setCurrentKey] = useState(apiKey);
   const [showInstructions, setShowInstructions] = useState(false);
   const [copyButtonText, setCopyButtonText] = useState('Kopieer Code');
 
-
   useEffect(() => {
     setCurrentUrl(scriptUrl);
-  }, [scriptUrl]);
+    setCurrentKey(apiKey);
+  }, [scriptUrl, apiKey]);
 
   const handleSave = () => {
-    onSave(currentUrl);
+    onSave(currentUrl, currentKey);
     alert('Instellingen opgeslagen!');
   };
   
@@ -64,6 +66,27 @@ function doPost(e) {
 
   return (
     <div className="space-y-8">
+      {/* API Key Section */}
+      <div>
+        <h3 className="text-lg font-medium text-slate-800 flex items-center gap-2">
+            <WrenchScrewdriverIcon className="w-5 h-5 text-slate-500"/>
+            AI Configuratie (Fallback)
+        </h3>
+        <p className="text-sm text-slate-500 mb-2">
+            Als de automatische API-koppeling niet werkt, kunt u hier handmatig uw Gemini API Key invoeren.
+            Laat leeg om de server-instelling te gebruiken.
+        </p>
+        <input
+            type="password"
+            value={currentKey}
+            onChange={(e) => setCurrentKey(e.target.value)}
+            placeholder="AIzaSy..."
+            className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+        />
+      </div>
+
+      <hr className="border-slate-200" />
+
       {/* Google Sheets Section */}
       <div>
         <h3 className="text-lg font-medium text-slate-800">Google Apps Script URL (Optioneel)</h3>

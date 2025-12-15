@@ -38,6 +38,11 @@ const App: React.FC = () => {
     return localStorage.getItem('googleScriptUrl') || '';
   });
 
+  // Load Custom API Key from local storage (Fallback)
+  const [customApiKey, setCustomApiKey] = useState<string>(() => {
+    return localStorage.getItem('geminiApiKey') || '';
+  });
+
   // Persist cars
   useEffect(() => {
     try {
@@ -47,10 +52,11 @@ const App: React.FC = () => {
     }
   }, [cars]);
 
-  // Persist Script URL
+  // Persist Script URL and API Key
   useEffect(() => {
     localStorage.setItem('googleScriptUrl', googleScriptUrl);
-  }, [googleScriptUrl]);
+    localStorage.setItem('geminiApiKey', customApiKey);
+  }, [googleScriptUrl, customApiKey]);
 
 
   const handleAddCar = (newCarData: Omit<Car, 'id'>) => {
@@ -79,8 +85,9 @@ const App: React.FC = () => {
     }
   };
 
-  const handleSaveSettings = (url: string) => {
+  const handleSaveSettings = (url: string, key: string) => {
     setGoogleScriptUrl(url);
+    setCustomApiKey(key);
     setIsSettingsOpen(false); // Close settings after saving
   };
 
@@ -118,11 +125,12 @@ const App: React.FC = () => {
     setAnalyzedData(null);
 
     try {
-      const data = await analyzeReceipt(imageFile);
+      // Pass the custom key if set, otherwise undefined
+      const data = await analyzeReceipt(imageFile, customApiKey || undefined);
       setAnalyzedData(data);
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'Analyse van het bonnetje is mislukt. Probeer het opnieuw.');
+      setError(err.message || 'Analyse van het bonnetje is mislukt. Probeer het opnieuw of controleer uw API Key in de instellingen.');
     } finally {
       setIsLoading(false);
     }
@@ -227,6 +235,7 @@ const App: React.FC = () => {
               <div id="settings" className="p-4 md:p-6 border-t border-slate-200 animate-fade-in">
                 <Settings
                   scriptUrl={googleScriptUrl}
+                  apiKey={customApiKey}
                   onSave={handleSaveSettings}
                 />
               </div>
