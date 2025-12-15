@@ -1,13 +1,30 @@
 import { GoogleGenAI, Type } from '@google/genai';
 import type { AnalyzedReceiptData } from '../types';
 
-const API_KEY = process.env.API_KEY;
+// HULPFUNCTIE: Haal de API Key veilig op zonder te crashen in de browser.
+const getApiKey = () => {
+  try {
+    // @ts-ignore - Check voor Vite environment variabele (standaard voor dit project)
+    if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_KEY) {
+      // @ts-ignore
+      return import.meta.env.VITE_API_KEY;
+    }
+  } catch (e) {
+    // Ga stilzwijgend door
+  }
 
-if (!API_KEY) {
-  throw new Error("API_KEY environment variable not set");
-}
+  try {
+    // @ts-ignore - Fallback voor Node/andere omgevingen
+    if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
+      // @ts-ignore
+      return process.env.API_KEY;
+    }
+  } catch (e) {
+    // Negeer errors
+  }
 
-const ai = new GoogleGenAI({ apiKey: API_KEY });
+  return '';
+};
 
 const fileToGenerativePart = async (file: File) => {
   const base64EncodedDataPromise = new Promise<string>((resolve) => {
@@ -21,6 +38,16 @@ const fileToGenerativePart = async (file: File) => {
 };
 
 export const analyzeReceipt = async (imageFile: File): Promise<AnalyzedReceiptData> => {
+  const apiKey = getApiKey();
+  
+  if (!apiKey) {
+    throw new Error("API Key ontbreekt. Zorg dat de variabele 'VITE_API_KEY' is ingesteld in Netlify Environment Variables.");
+  }
+
+  // We initialiseren de AI pas HIER, op het moment dat de functie wordt aangeroepen.
+  // Dit voorkomt dat de app crasht bij het laden van de pagina als de key ontbreekt.
+  const ai = new GoogleGenAI({ apiKey: apiKey });
+
   const imagePart = await fileToGenerativePart(imageFile);
 
   const response = await ai.models.generateContent({
@@ -46,7 +73,7 @@ export const analyzeReceipt = async (imageFile: File): Promise<AnalyzedReceiptDa
     },
   });
 
-  const jsonText = response.text.trim();
+  const jsonText = response.text ? response.text.trim() : "";
   try {
     const parsedJson = JSON.parse(jsonText);
     return parsedJson as AnalyzedReceiptData;
