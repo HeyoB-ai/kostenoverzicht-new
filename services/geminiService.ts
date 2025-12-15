@@ -20,7 +20,6 @@ export const analyzeReceipt = async (imageFile: File): Promise<AnalyzedReceiptDa
   const base64Data = await fileToBase64(imageFile);
 
   // Roep de veilige Netlify backend functie aan
-  // We sturen de data naar het relatieve pad /.netlify/functions/analyze
   const response = await fetch('/.netlify/functions/analyze', {
     method: 'POST',
     headers: {
@@ -32,9 +31,29 @@ export const analyzeReceipt = async (imageFile: File): Promise<AnalyzedReceiptDa
     }),
   });
 
+  const contentType = response.headers.get("content-type");
+  
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Er is een fout opgetreden: ${errorText}`);
+    let errorMessage = `Er is een fout opgetreden (Status: ${response.status})`;
+    
+    // Probeer de JSON error body te lezen
+    if (contentType && contentType.includes("application/json")) {
+      try {
+        const errorData = await response.json();
+        if (errorData.error) {
+          errorMessage = errorData.error;
+        }
+      } catch (e) {
+        // Fallback als json parsen mislukt
+        const text = await response.text();
+        if (text) errorMessage = text;
+      }
+    } else {
+        const text = await response.text();
+        if (text) errorMessage = text;
+    }
+    
+    throw new Error(errorMessage);
   }
 
   const data = await response.json();

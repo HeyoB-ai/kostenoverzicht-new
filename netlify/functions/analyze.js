@@ -7,18 +7,31 @@ export default async (req, context) => {
   }
 
   try {
-    // Haal de API key uit de omgevingsvariabelen (server-side, dus veilig)
-    const apiKey = process.env.VITE_API_KEY;
+    // Haal de API key uit de omgevingsvariabelen
+    let apiKey = process.env.VITE_API_KEY;
 
     if (!apiKey) {
+      console.error("API Key ontbreekt in environment variables.");
       return new Response(JSON.stringify({ error: "Server configuratie fout: API Key ontbreekt." }), {
         status: 500,
         headers: { "Content-Type": "application/json" }
       });
     }
 
+    // SCHOONMAAK: Verwijder spaties en eventuele aanhalingstekens die per ongeluk zijn meegekopieerd
+    apiKey = apiKey.trim();
+    if ((apiKey.startsWith('"') && apiKey.endsWith('"')) || (apiKey.startsWith("'") && apiKey.endsWith("'"))) {
+      apiKey = apiKey.slice(1, -1);
+    }
+
     // Lees de data van de frontend
-    const body = await req.json();
+    let body;
+    try {
+      body = await req.json();
+    } catch (e) {
+      return new Response(JSON.stringify({ error: "Ongeldige JSON body." }), { status: 400 });
+    }
+
     const { image, mimeType } = body;
 
     if (!image) {
@@ -31,7 +44,7 @@ export default async (req, context) => {
     // Initialiseer Gemini AI
     const ai = new GoogleGenAI({ apiKey: apiKey });
 
-    // Het model en de prompt configuratie (verplaatst van frontend naar backend)
+    // Het model en de prompt configuratie
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: {
@@ -68,8 +81,20 @@ export default async (req, context) => {
     });
 
   } catch (error) {
-    console.error("Gemini API Error:", error);
-    return new Response(JSON.stringify({ error: "Fout bij verwerken bonnetje: " + error.message }), {
+    console.error("Gemini API Error Full:", error);
+    
+    // Probeer een duidelijke foutmelding terug te geven
+    let errorMessage = "Fout bij verwerken bonnetje.";
+    
+    if (error.message) {
+        if (error.message.includes("401")) {
+            errorMessage = "Authenticatie fout bij Google (401). Controleer of de API Key correct is ingesteld in Netlify (zonder aanhalingstekens).";
+        } else {
+            errorMessage += " " + error.message;
+        }
+    }
+
+    return new Response(JSON.stringify({ error: errorMessage }), {
       status: 500,
       headers: { "Content-Type": "application/json" }
     });
