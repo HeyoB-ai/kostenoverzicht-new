@@ -7,22 +7,24 @@ export default async (req, context) => {
   }
 
   try {
-    // Haal de API key uit de omgevingsvariabelen
-    let apiKey = process.env.VITE_API_KEY;
+    // 1. Probeer beide mogelijke namen voor de API key
+    let rawApiKey = process.env.VITE_API_KEY || process.env.API_KEY;
 
-    if (!apiKey) {
-      console.error("API Key ontbreekt in environment variables.");
-      return new Response(JSON.stringify({ error: "Server configuratie fout: API Key ontbreekt." }), {
+    if (!rawApiKey) {
+      console.error("CRITISCH: Geen API Key gevonden in environment variables (VITE_API_KEY of API_KEY).");
+      return new Response(JSON.stringify({ error: "Server configuratie fout: API Key ontbreekt in Netlify instellingen." }), {
         status: 500,
         headers: { "Content-Type": "application/json" }
       });
     }
 
-    // SCHOONMAAK: Verwijder spaties en eventuele aanhalingstekens die per ongeluk zijn meegekopieerd
-    apiKey = apiKey.trim();
-    if ((apiKey.startsWith('"') && apiKey.endsWith('"')) || (apiKey.startsWith("'") && apiKey.endsWith("'"))) {
-      apiKey = apiKey.slice(1, -1);
-    }
+    // 2. AGRESSIEVE SCHOONMAAK
+    // Verwijder alles wat geen letter, cijfer of symbool is die in keys voorkomt.
+    // Specifiek: verwijder quotes (" of '), spaties, tabs, newlines.
+    const apiKey = rawApiKey.replace(/["'\s\n\r]/g, '');
+
+    // Debug log (veilig: laat alleen lengte en laatste 4 tekens zien)
+    console.log(`API Key geladen. Lengte: ${apiKey.length}. Eindigt op: ...${apiKey.slice(-4)}`);
 
     // Lees de data van de frontend
     let body;
@@ -88,7 +90,9 @@ export default async (req, context) => {
     
     if (error.message) {
         if (error.message.includes("401")) {
-            errorMessage = "Authenticatie fout bij Google (401). Controleer of de API Key correct is ingesteld in Netlify (zonder aanhalingstekens).";
+            errorMessage = "Authenticatie fout bij Google (401). De API Key is waarschijnlijk onjuist of niet geactiveerd voor Gemini API. Check Netlify logs voor details.";
+        } else if (error.message.includes("403")) {
+             errorMessage = "Toegang geweigerd (403). Mogelijke oorzaken: API niet ingeschakeld in Google Cloud Console, of billing limiet bereikt.";
         } else {
             errorMessage += " " + error.message;
         }
