@@ -1,31 +1,6 @@
 import { GoogleGenAI, Type } from '@google/genai';
 import type { AnalyzedReceiptData } from '../types';
 
-// HULPFUNCTIE: Haal de API Key veilig op zonder te crashen in de browser.
-const getApiKey = () => {
-  try {
-    // @ts-ignore - Check voor Vite environment variabele (standaard voor dit project)
-    if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_KEY) {
-      // @ts-ignore
-      return import.meta.env.VITE_API_KEY;
-    }
-  } catch (e) {
-    // Ga stilzwijgend door
-  }
-
-  try {
-    // @ts-ignore - Fallback voor Node/andere omgevingen
-    if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
-      // @ts-ignore
-      return process.env.API_KEY;
-    }
-  } catch (e) {
-    // Negeer errors
-  }
-
-  return '';
-};
-
 const fileToGenerativePart = async (file: File) => {
   const base64EncodedDataPromise = new Promise<string>((resolve) => {
     const reader = new FileReader();
@@ -37,15 +12,11 @@ const fileToGenerativePart = async (file: File) => {
   };
 };
 
-export const analyzeReceipt = async (imageFile: File): Promise<AnalyzedReceiptData> => {
-  const apiKey = getApiKey();
-  
+export const analyzeReceipt = async (imageFile: File, apiKey: string): Promise<AnalyzedReceiptData> => {
   if (!apiKey) {
-    throw new Error("API Key ontbreekt. Zorg dat de variabele 'VITE_API_KEY' is ingesteld in Netlify Environment Variables.");
+    throw new Error("API Key ontbreekt. Vul uw Google Gemini API Key in bij de Instellingen.");
   }
 
-  // We initialiseren de AI pas HIER, op het moment dat de functie wordt aangeroepen.
-  // Dit voorkomt dat de app crasht bij het laden van de pagina als de key ontbreekt.
   const ai = new GoogleGenAI({ apiKey: apiKey });
 
   const imagePart = await fileToGenerativePart(imageFile);
