@@ -111,3 +111,10 @@ export const ArrowUpTrayIcon: React.FC<IconProps> = (props) => (
     <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
   </svg>
 );
+
+export const Cog6ToothIcon: React.FC<IconProps> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.26.716.53 1.003l.828.828c.398.398.89.623 1.42.623h1.281c.552 0 .99.448.99 1.002v2.592c0 .552-.448.99-1 .99h-1.281c-.53 0-1.022.225-1.42.623l-.828.828c-.27.287-.467.629-.53 1.003l-.213 1.281c-.09.542-.56.94-1.11.94h-2.593c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.063-.374-.26-.716-.53-1.003l-.828-.828c-.398-.398-.89-.623-1.42-.623H5.002c-.552 0-.99-.448-.99-1V9.002c0-.552.448-.99 1-.99h1.281c.53 0 1.022-.225 1.42-.623l.828-.828c.27-.287.467-.629.53-1.003l.213-1.281Z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+    </svg>
+);

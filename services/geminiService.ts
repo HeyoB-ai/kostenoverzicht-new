@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type } from '@google/genai';
 import type { AnalyzedReceiptData } from '../types';
 
@@ -29,7 +28,7 @@ export const analyzeReceipt = async (imageFile: File): Promise<AnalyzedReceiptDa
     contents: {
       parts: [
         imagePart,
-        { text: 'Analyze the provided image of a car maintenance receipt. Extract the vendor name, transaction date (in YYYY-MM-DD format), the total amount as a number, and a brief description of services or items. If you cannot determine a value, use null.' }
+        { text: 'Analyseer de afbeelding van dit onderhoudsbonnetje. Extraheer de naam van de leverancier, de transactiedatum (in JJJJ-MM-DD-formaat), het totaalbedrag als een getal, en een korte omschrijving van de diensten of producten. Gebruik null als je een waarde niet kunt vinden.' }
       ],
     },
     config: {
@@ -37,10 +36,10 @@ export const analyzeReceipt = async (imageFile: File): Promise<AnalyzedReceiptDa
       responseSchema: {
         type: Type.OBJECT,
         properties: {
-          vendor: { type: Type.STRING, description: 'The name of the vendor or shop.' },
-          date: { type: Type.STRING, description: 'The date of the transaction in YYYY-MM-DD format.' },
-          total: { type: Type.NUMBER, description: 'The final total amount of the receipt.' },
-          description: { type: Type.STRING, description: 'A brief summary of the services performed or items purchased.' },
+          vendor: { type: Type.STRING, description: 'De naam van de leverancier of winkel.' },
+          date: { type: Type.STRING, description: 'De datum van de transactie in JJJJ-MM-DD-formaat.' },
+          total: { type: Type.NUMBER, description: 'Het uiteindelijke totaalbedrag van de bon.' },
+          description: { type: Type.STRING, description: 'Een korte samenvatting van de uitgevoerde diensten of gekochte artikelen.' },
         },
         required: ['vendor', 'date', 'total', 'description'],
       },
@@ -53,6 +52,6 @@ export const analyzeReceipt = async (imageFile: File): Promise<AnalyzedReceiptDa
     return parsedJson as AnalyzedReceiptData;
   } catch (e) {
     console.error("Failed to parse JSON from Gemini response:", jsonText);
-    throw new Error("Could not parse the analysis result from the AI.");
+    throw new Error("Kon het analyseresultaat van de AI niet verwerken.");
   }
 };
