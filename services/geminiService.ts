@@ -1,51 +1,42 @@
-import { GoogleGenAI, Type } from '@google/genai';
 import type { AnalyzedReceiptData } from '../types';
 
-const fileToGenerativePart = async (file: File) => {
-  const base64EncodedDataPromise = new Promise<string>((resolve) => {
+// Helper om bestand naar Base64 string te converteren (zonder de data:image/... prefix)
+const fileToBase64 = async (file: File): Promise<string> => {
+  return new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
-    reader.onloadend = () => resolve((reader.result as string).split(',')[1]);
+    reader.onloadend = () => {
+      const result = reader.result as string;
+      // Split op de komma om alleen de base64 data te krijgen
+      const base64Data = result.split(',')[1]; 
+      resolve(base64Data);
+    };
+    reader.onerror = reject;
     reader.readAsDataURL(file);
   });
-  return {
-    inlineData: { data: await base64EncodedDataPromise, mimeType: file.type },
-  };
 };
 
 export const analyzeReceipt = async (imageFile: File): Promise<AnalyzedReceiptData> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  // Converteer de afbeelding naar base64 voor verzending
+  const base64Data = await fileToBase64(imageFile);
 
-  const imagePart = await fileToGenerativePart(imageFile);
-
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
-    contents: {
-      parts: [
-        imagePart,
-        { text: 'Analyseer de afbeelding van dit onderhoudsbonnetje. Extraheer de naam van de leverancier, de transactiedatum (in JJJJ-MM-DD-formaat), het totaalbedrag als een getal, en een korte omschrijving van de diensten of producten. Gebruik null als je een waarde niet kunt vinden.' }
-      ],
+  // Roep de veilige Netlify backend functie aan
+  // We sturen de data naar het relatieve pad /.netlify/functions/analyze
+  const response = await fetch('/.netlify/functions/analyze', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
     },
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          vendor: { type: Type.STRING, description: 'De naam van de leverancier of winkel.' },
-          date: { type: Type.STRING, description: 'De datum van de transactie in JJJJ-MM-DD-formaat.' },
-          total: { type: Type.NUMBER, description: 'Het uiteindelijke totaalbedrag van de bon.' },
-          description: { type: Type.STRING, description: 'Een korte samenvatting van de uitgevoerde diensten of gekochte artikelen.' },
-        },
-        required: ['vendor', 'date', 'total', 'description'],
-      },
-    },
+    body: JSON.stringify({
+      image: base64Data,
+      mimeType: imageFile.type,
+    }),
   });
 
-  const jsonText = response.text ? response.text.trim() : "";
-  try {
-    const parsedJson = JSON.parse(jsonText);
-    return parsedJson as AnalyzedReceiptData;
-  } catch (e) {
-    console.error("Failed to parse JSON from Gemini response:", jsonText);
-    throw new Error("Kon het analyseresultaat van de AI niet verwerken.");
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Er is een fout opgetreden: ${errorText}`);
   }
+
+  const data = await response.json();
+  return data as AnalyzedReceiptData;
 };
